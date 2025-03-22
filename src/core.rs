@@ -9,12 +9,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(feature = "safe-shared-libraries")]
 use findshlibs::{Avma, IterationControl, Segment, SharedLibrary};
 
-use ipc_channel::ipc::{self, IpcReceiver, IpcSender, OpaqueIpcReceiver, OpaqueIpcSender};
 use ipc_channel::ErrorKind as IpcErrorKind;
+use ipc_channel::ipc::{self, IpcReceiver, IpcSender, OpaqueIpcReceiver, OpaqueIpcSender};
 use serde::{Deserialize, Serialize};
 
 use crate::error::PanicInfo;
-use crate::panic::{init_panic_hook, reset_panic_info, take_panic, BacktraceCapture};
+use crate::panic::{BacktraceCapture, init_panic_hook, reset_panic_info, take_panic};
 use crate::serde::with_ipc_mode;
 
 pub const ENV_NAME: &str = "__PROCSPAWN_CONTENT_PROCESS_ID";
@@ -186,7 +186,9 @@ impl ProcConfig {
 
         if let Ok(token) = env::var(ENV_NAME) {
             // permit nested invocations
-            std::env::remove_var(ENV_NAME);
+            unsafe {
+                std::env::remove_var(ENV_NAME);
+            }
             if let Some(callback) = self.callback.take() {
                 callback();
             }
@@ -328,7 +330,8 @@ unsafe fn run_func<A, R>(
     R: Serialize + for<'de> Deserialize<'de>,
 {
     let lib_offset = find_shared_library_offset_by_name(lib_name);
-    let function: fn(A) -> R = mem::transmute(fn_offset + lib_offset as *const () as isize);
+    let function: fn(A) -> R =
+        unsafe { mem::transmute(fn_offset + lib_offset as *const () as isize) };
     let args = with_ipc_mode(|| args_recv.to().recv().unwrap());
     let rv = if panic_handling {
         reset_panic_info();

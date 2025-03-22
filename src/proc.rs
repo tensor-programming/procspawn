@@ -4,16 +4,16 @@ use std::fmt;
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::process::{ChildStderr, ChildStdin, ChildStdout};
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::{env, mem, process};
 use std::{io, thread};
 
 use ipc_channel::ipc::{self, IpcOneShotServer, IpcReceiver, IpcSender};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
-use crate::core::{assert_spawn_okay, should_pass_args, MarshalledCall, ENV_NAME};
+use crate::core::{ENV_NAME, MarshalledCall, assert_spawn_okay, should_pass_args};
 use crate::error::{PanicInfo, SpawnError};
 use crate::pool::PooledHandle;
 use crate::serde::with_ipc_mode;
@@ -403,7 +403,7 @@ impl<T: Serialize + DeserializeOwned> ProcessHandle<T> {
         let deadline = match Instant::now().checked_add(timeout) {
             Some(deadline) => deadline,
             None => {
-                return Err(io::Error::new(io::ErrorKind::Other, "timeout out of bounds").into())
+                return Err(io::Error::new(io::ErrorKind::Other, "timeout out of bounds").into());
             }
         };
         let mut to_sleep = Duration::from_millis(1);
@@ -530,8 +530,8 @@ impl<T: Serialize + DeserializeOwned> JoinHandle<T> {
         match self.inner {
             Ok(ref mut handle_inner) => {
                 let result = match handle_inner {
-                    JoinHandleInner::Process(ref mut handle) => handle.join_timeout(timeout),
-                    JoinHandleInner::Pooled(ref mut handle) => handle.join_timeout(timeout),
+                    JoinHandleInner::Process(handle) => handle.join_timeout(timeout),
+                    JoinHandleInner::Pooled(handle) => handle.join_timeout(timeout),
                 };
 
                 if result.is_ok() {

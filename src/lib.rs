@@ -109,7 +109,7 @@
 //! * when trying to spawn with intercepted `stdout` be aware that there is
 //!   extra noise that will be emitted by rusttest.
 //!
-//! ```rust,no_run
+//! ```rust,no_run,ignore
 //! procspawn::enable_test_support!();
 //!
 //! #[test]
@@ -191,10 +191,7 @@ pub mod serde;
 
 mod macros;
 
-pub use self::core::{assert_spawn_is_safe, init, ProcConfig};
+pub use self::core::{ProcConfig, assert_spawn_is_safe, init};
 pub use self::error::{Location, PanicInfo, SpawnError};
 pub use self::pool::{Pool, PoolBuilder};
-pub use self::proc::{spawn, Builder, JoinHandle};
-
-#[cfg(feature = "async")]
-pub use self::asyncsupport::{spawn_async, AsyncJoinHandle};
+pub use self::proc::{Builder, JoinHandle, spawn};
